@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEINFRA Uberlandia - Dashboard de Obras</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+
+.header {
+    background: linear-gradient(135deg, #1a365d 0%, #2d5a8e 100%);
+    color: white; padding: 20px 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.header h1 { font-size: 22px; font-weight: 600; }
+.header .sub { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+
+.resumo {
+    display: flex; gap: 16px; padding: 20px 30px; flex-wrap: wrap;
+}
+.resumo-card {
+    background: white; border-radius: 10px; padding: 16px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1); min-width: 160px; text-align: center;
+}
+.resumo-card .numero { font-size: 28px; font-weight: 700; }
+.resumo-card .label { font-size: 12px; color: #666; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.resumo-card.vermelho .numero { color: #dc2626; }
+.resumo-card.amarelo .numero { color: #d97706; }
+.resumo-card.verde .numero { color: #16a34a; }
+.resumo-card.total .numero { color: #1a365d; }
+
+.filtros {
+    padding: 10px 30px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.filtros input, .filtros select {
+    padding: 8px 14px; border: 1px solid #d1d5db; border-radius: 8px;
+    font-size: 14px; background: white;
+}
+.filtros input { width: 300px; }
+.filtros label { font-size: 13px; color: #555; font-weight: 500; }
+
+.cards { padding: 10px 30px 30px; display: flex; flex-direction: column; gap: 12px; }
+
+.card {
+    background: white; border-radius: 10px; padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border-left: 5px solid #ccc;
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+}
+.card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.card.vermelho { border-left-color: #dc2626; }
+.card.amarelo { border-left-color: #d97706; }
+.card.verde { border-left-color: #16a34a; }
+.card.cinza { border-left-color: #9ca3af; }
+
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.card-title { font-size: 15px; font-weight: 600; color: #1a365d; flex: 1; }
+.card-valor { font-size: 15px; font-weight: 700; color: #333; white-space: nowrap; }
+
+.card-info {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px 20px; margin-top: 12px; font-size: 13px; color: #555;
+}
+.card-info span { display: flex; gap: 4px; }
+.card-info .lbl { font-weight: 600; color: #444; }
+
+.barras { margin-top: 14px; }
+.barra-container { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.barra-label { font-size: 12px; width: 100px; text-align: right; color: #555; }
+.barra-track { flex: 1; height: 22px; background: #e5e7eb; border-radius: 11px; overflow: hidden; position: relative; }
+.barra-fill { height: 100%; border-radius: 11px; transition: width 0.5s; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }
+.barra-fill span { font-size: 11px; font-weight: 700; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.barra-fisico { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+.barra-temporal { background: linear-gradient(90deg, #6b7280, #9ca3af); }
+
+.status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.status-badge.vermelho { background: #fee2e2; color: #dc2626; }
+.status-badge.amarelo { background: #fef3c7; color: #d97706; }
+.status-badge.verde { background: #dcfce7; color: #16a34a; }
+.status-badge.cinza { background: #f3f4f6; color: #6b7280; }
+
+.card-detalhe { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 13px; color: #555; }
+.card.aberto .card-detalhe { display: block; }
+
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #e0e7ff; color: #3730a3; font-size: 11px; margin: 2px; }
+
+@media (max-width: 768px) {
+    .resumo { padding: 10px 16px; }
+    .cards { padding: 10px 16px; }
+    .filtros { padding: 10px 16px; }
+    .filtros input { width: 100%; }
+    .card-info { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>SEINFRA UBERLANDIA - PAINEL DE OBRAS</h1>
+    <div class="sub">Atualizado em 05/04/2026 às 14:11 | Dados do Notion</div>
+</div>
+
+<div class="resumo">
+    <div class="resumo-card total">
+        <div class="numero">40</div>
+        <div class="label">Obras em andamento</div>
+    </div>
+    <div class="resumo-card total">
+        <div class="numero">R$ 475.9M</div>
+        <div class="label">Valor total</div>
+    </div>
+    <div class="resumo-card verde">
+        <div class="numero">2</div>
+        <div class="label">No prazo</div>
+    </div>
+    <div class="resumo-card amarelo">
+        <div class="numero">9</div>
+        <div class="label">Atenção</div>
+    </div>
+    <div class="resumo-card vermelho">
+        <div class="numero">23</div>
+        <div class="label">Atrasadas</div>
+    </div>
+    <div class="resumo-card" style="border-top: 3px solid #9ca3af;">
+        <div class="numero" style="color:#6b7280;">6</div>
+        <div class="label">Sem dados de prazo</div>
+    </div>
+</div>
+
+<div class="filtros">
+    <input type="text" id="busca" placeholder="Buscar por nome, empresa ou fiscal..." oninput="filtrar()">
+    <label>Status:</label>
+    <select id="filtroStatus" onchange="filtrar()">
+        <option value="">Todos</option>
+        <option value="vermelho">Atrasadas</option>
+        <option value="amarelo">Atenção</option>
+        <option value="verde">No prazo</option>
+        <option value="cinza">Sem dados</option>
+    </select>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<script>
+const contratos = [{"nome": "Ampliação e Retrofit ETE Uberabinha - Consórcio ETE Uberabinha - CP 504/2022", "objeto": "ETE Uberabinha - Execução de Ampliação e Retrofit da Estação de tratamento de Esgoto (ETE) Uberabinha, em Uberlândia - MG", "empresa": "Consórcio ETE Uberabinha (CONATA)", "fiscal": "Renato Borges Gularte Júnior - DMAE", "gestor": "Carlos Alvim - SEINFRA", "valor": 72607090.42, "avanco_fisico": 0.79, "avanco_temporal": 1.0, "meses_exec": 36, "status": "Em andamento", "prazo_contratual": "42 meses", "prazo_exec": "36 meses", "os_data": "2023-01-17", "prev_termino": "2026-10-16", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "DMAE", "tags": "Prioridade alta, Reforma", "pagamento": "Débito >= 1M, Atrasado", "debito": 1458303.68, "prazo_termino": "2026-01-17", "semaforo": "vermelho"}, {"nome": "Duplicação Coletor Tronco São Jorge (Interceptor Sul) - BT Construções LTDA - CP 589/2024", "objeto": "Contratação de Empresa de Engenharia para Duplicação do Coletor Tronco São Jorge - Rio Uberabinha Margem Direita Sul e Estações Elevatórias de Esgoto, em Uberlândia/MG", "empresa": "BT Construções Ltda", "fiscal": "Lucas Afonso", "gestor": "Paulo José Mendes Júnior - SEINFRA", "valor": 64016000, "avanco_fisico": 0.43170000000000003, "avanco_temporal": 0.7962962962962963, "meses_exec": 18, "status": "Em andamento", "prazo_contratual": "24 meses", "prazo_exec": "18 meses", "os_data": "2025-01-30", "prev_termino": "2026-12-21", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "DMAE, Infraestrutura", "tags": "Publicidade, Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-07-30", "semaforo": "vermelho"}, {"nome": "Terminal Sul (Universitário) - Edcon Comércio - CP 156/2025", "objeto": "Contratação de empresa de engenharia para execução de obras de um terminal de ônibus no setor sul da cidade – Terminal de Ônibus Sul, em Uberlândia/MG.", "empresa": "Edcon Comércio e Construções LTDA", "fiscal": "Gustavo Henrique Ribeiro", "gestor": "Nelmira Pamplona - SEINFRA", "valor": 36790000, "avanco_fisico": 0.1881, "avanco_temporal": 0.6305555555555555, "meses_exec": 12, "status": "Em andamento", "prazo_contratual": "18 meses", "prazo_exec": "12 meses", "os_data": "2025-08-21", "prev_termino": "2026-11-20", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "SETTRAN", "tags": "Plano de Governo (2025-2028), Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-08-21", "semaforo": "vermelho"}, {"nome": "Reestruturação do Sistema de Drenagem Urbana - Norte Sul - CP 484/2025", "objeto": "Contratação de Empresa Especializada para Executar Serviços de Reestruturação e Modernização do Sistema de Drenagem Pluvial", "empresa": "Norte Sul Hidrotecnologia e Comércio LTDA", "fiscal": "Vlaudimir Henrique da Rocha, Lucas Cordeiro - DMAE", "gestor": "Nelmira Pamplona - SEINFRA", "valor": 35998999.92, "avanco_fisico": 0, "avanco_temporal": 1.0, "meses_exec": 1, "status": "Em andamento", "prazo_contratual": "1 ano (prorrogável à 10 anos)", "prazo_exec": "1 ano (prorrogável à 10 anos)", "os_data": "2026-03-02", "prev_termino": "2027-03-02", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "Infraestrutura, DMAE", "tags": "Prioridade alta", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-04-02", "semaforo": "vermelho"}, {"nome": "Construção UPA Morumbi - Evolução Eng. Construção e Administração - CP 188/2024 ", "objeto": "Contratação de empresa de engenharia para ELABORAÇÃO DE PROJETOS E CONSTRUÇÃO DE UNIDADE DE SAÚDE - UAI MORUMBI - LOCALIZADA NA AVENIDA JOSÉ MARIA RIBEIRO ENTRE RUA DOS HOSPITALEIROS E RUA CAMBÃO, BAIRRO MORUMBI, NO MUNICÍPIO DE UBERLÂNDIA-MG", "empresa": "Evolução Eng. Construção e Administração ltda - EPP", "fiscal": "Lucas Afonso", "gestor": "Paulo José Mendes Júnior - SEINFRA", "valor": 16918300, "avanco_fisico": 0.3714, "avanco_temporal": 1.0, "meses_exec": 18, "status": "Em andamento", "prazo_contratual": "21 meses", "prazo_exec": "18 meses", "os_data": "2024-10-01", "prev_termino": "2026-12-21", "diretoria": "Diretoria de Edificações", "secretaria": "Saúde", "tags": "Plano de Governo (2025-2028), Publicidade, Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-04-01", "semaforo": "vermelho"}, {"nome": "Construção EMEF Luizote - SIGMA ENGENHARIA - CP 304/2025", "objeto": "CONTRATAÇÃO DE EMPRESA DE ENGENHARIA PARA EXECUÇÃO OBRAS DE CONSTRUÇÃO DA ESCOLA MUNICIPAL DE ENSINO FUNDAMENTAL DO BAIRRO LUIZOTE IV - ESCOLA DE TEMPO INTEGRAL, SITUADA À AVENIDA 1 E 2A, LOTEAMENTO LUIZOTE IV, EM UBERLÂNDIA/MG", "empresa": "Sigma Engenharia e Construção Ltda.", "fiscal": "Paula Giovanna Pimenta Souza", "gestor": "Lorena Rocha Santa - SME", "valor": 11212489.89, "avanco_fisico": 0.06, "avanco_temporal": 0.36428571428571427, "meses_exec": 14, "status": "Em andamento", "prazo_contratual": "17 meses", "prazo_exec": "14 meses", "os_data": "2025-11-03", "prev_termino": "2027-01-04", "diretoria": "Diretoria de Edificações", "secretaria": "Educação", "tags": "Plano de Governo (2025-2028), Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2027-01-03", "semaforo": "vermelho"}, {"nome": "Construção de novos trechos do Coletor Tronco do Córrego do Óleo - Black Engenharia LTDA - CP 147/2023", "objeto": "Implantação de Novos Trechos no Coletor Tronco do Córrego do Óleo , no Município de Uberlândia-MG (Vários bairros: Mansour, Luizote de Freitas e Jardim Patrícia.)", "empresa": "Black Engenharia Ltda", "fiscal": "Gustavo Henrique Ribeiro", "gestor": "Renato Borges Gularte Júnior - DMAE", "valor": 10270627.72, "avanco_fisico": 0.5782, "avanco_temporal": 1.0, "meses_exec": 17, "status": "Paralisado", "prazo_contratual": "21 meses", "prazo_exec": "17 meses", "os_data": "2023-07-24", "prev_termino": "2026-06-01", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "DMAE, Infraestrutura", "tags": "Publicidade, Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2024-12-24", "semaforo": "vermelho"}, {"nome": "Reforma do Centro Administrativo Virgílio Galassi e Câmara Municipal de Uberlândia - Sigma Engenharia - CP 300/2023", "objeto": "Reforma Complementar do Centro Administrativo Virgílio Galassi e Câmara Municipal de Uberlândia.", "empresa": "Sigma Engenharia e Construção Ltda.", "fiscal": "Lorena Silva", "gestor": "Isabel Maria Soares - SEINFRA", "valor": 6646994.13, "avanco_fisico": 0.777, "avanco_temporal": 1.0, "meses_exec": 15, "status": "Em andamento", "prazo_contratual": "19 meses", "prazo_exec": "15 meses", "os_data": "2023-10-05", "prev_termino": "2026-04-30", "diretoria": "Diretoria de Edificações", "secretaria": "Infraestrutura", "tags": "Reforma", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2025-01-05", "semaforo": "vermelho"}, {"nome": "Construção EMEI Pequis - TRIUM CONSTRUTORA - CP 306/2025", "objeto": "EMEI Pequis - CONTRATAÇÃO DE EMPRESA DE ENGENHARIA PARA EXECUÇÃO OBRAS DE CONSTRUÇÃO DA\nESCOLA MUNICIPAL DE EDUCAÇÃO INFANTIL DO BAIRRO PEQUIS, SITUADA À RUA SOVI, S/N, BAIRRO PEQUIS, EM UBERLÂNDIA/MG", "empresa": "Trium Construtora LTDA", "fiscal": "Paula Giovanna Pimenta Souza", "gestor": "Cristina Eliza Cantelli Reis - SME", "valor": 5257639.97, "avanco_fisico": 0.22, "avanco_temporal": 0.51, "meses_exec": 10, "status": "Em andamento", "prazo_contratual": "13 meses", "prazo_exec": "10 meses", "os_data": "2025-11-03", "prev_termino": "2026-09-03", "diretoria": "Diretoria de Edificações", "secretaria": "Educação", "tags": "Plano de Governo (2025-2028), Prioridade alta, Nova Construção", "pagamento": "Débito entre 500k e 1M, Atrasado", "debito": 616429.14, "prazo_termino": "2026-09-03", "semaforo": "vermelho"}, {"nome": "Construção novo Ambulatório Herbert de Souza - HHD Elétrica Comércio Ltda - CP 178/2024 ", "objeto": "Contratação de empresa de engenharia para execução de obras de reforma de edificação para implantação do ambulatório Herbert de Souza, localizado no cruzamento entre a Avenida San Marco e Rua Colúmbia, bairro Novo Mundo, em Uberlândia-MG.", "empresa": "HHD ELETRICA COMERCIO LTDA", "fiscal": "Isabel Maria Soares", "gestor": "Carlos Alvim - SEINFRA", "valor": 5124924, "avanco_fisico": 0.7021, "avanco_temporal": 1.0, "meses_exec": 8, "status": "Em andamento", "prazo_contratual": "11 meses", "prazo_exec": "08 meses", "os_data": "2024-08-19", "prev_termino": "2026-03-19", "diretoria": "Diretoria de Edificações", "secretaria": "Saúde", "tags": "Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2025-04-19", "semaforo": "vermelho"}, {"nome": "Poliesportivo Shopping Park - My Engenharia - CP 352/2025", "objeto": "Contratação de empresa de engenharia especializada e qualificada, com profissionais habilitados, para execução de obra compreendendo a Construção de Poliesportivo no Bairro Shopping Park em Uberlândia-MG.", "empresa": "My Engenharia e Prestação de Serviços LTDA", "fiscal": "Guilherme de Oliveira Lopes", "gestor": "Carlos Alvim - SEINFRA", "valor": 2993700, "avanco_fisico": 0.02, "avanco_temporal": 0.375, "meses_exec": 8, "status": "Em andamento", "prazo_contratual": "11 meses", "prazo_exec": "08 meses", "os_data": "2026-01-05", "prev_termino": "2026-09-05", "diretoria": "Diretoria de Edificações", "secretaria": "FUTEL", "tags": "Plano de Governo (2025-2028), Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-09-05", "semaforo": "vermelho"}, {"nome": "Poliesportivo Morumbi - My Engenharia - CP 307/2025", "objeto": "Contratação de empresa de engenharia para execução obras de construção de infraestrutura esportiva no B. MORUMBI, em Uberlândia MG em atendimento a Futel e SMO.", "empresa": "My Engenharia e Prestação de Serviços LTDA", "fiscal": "Guilherme de Oliveira Lopes", "gestor": "Paulo José Mendes Júnior - SEINFRA", "valor": 2566855.49, "avanco_fisico": 0.1, "avanco_temporal": 0.6375, "meses_exec": 8, "status": "Em andamento", "prazo_contratual": "11 meses", "prazo_exec": "08 meses", "os_data": "2025-11-03", "prev_termino": "2026-07-03", "diretoria": "Diretoria de Edificações", "secretaria": "FUTEL", "tags": "Plano de Governo (2025-2028), Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-07-03", "semaforo": "vermelho"}, {"nome": "Estacionamento do Parque do Sabiá - Sigma Engenharia - CP 158/2025", "objeto": "Estacionamento Parque do Sabiá - CONTRATAÇÃO DE EMPRESA DE ENGENHARIA PARA EXECUÇÃO DE OBRAS DE INFRAESTRUTURA PARA ESTACIONAMENTO DE VEÍCULOS, MOTOS E BICICLETAS NO PARQUE DO SABIÁ EM UBERLÂNDIA-MG", "empresa": "Sigma Engenharia e Construção Ltda.", "fiscal": "Nelmira Maria Pamplona", "gestor": "Gustavo Henrique Ribeiro - SEINFRA", "valor": 2219357.98, "avanco_fisico": 0.24, "avanco_temporal": 1.0, "meses_exec": 4, "status": "Em andamento", "prazo_contratual": "07 meses", "prazo_exec": "04 meses", "os_data": "2025-09-08", "prev_termino": "2026-04-03", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "FUTEL", "tags": "Plano de Governo (2025-2028), Reforma", "pagamento": "Débito <= 100k, Atrasado", "debito": 25465.71, "prazo_termino": "2026-01-08", "semaforo": "vermelho"}, {"nome": "CAPS Novo Mundo - JR Engenharia e Construções LTDA - CP 170/2025", "objeto": "Contratação semi-integrada de empresa de engenharia para elaboração de projetos e construção de edificação para implantação do Centro de Atenção Psicossocial Infanto Juvenil no B. Novo Mundo, em Uberlândia MG em atendimento a SEIFRAN e SMS", "empresa": "JR ENGENHARIA E CONSTRUCOES LTDA", "fiscal": "Lorena Silva", "gestor": "Wolney Gomides Timóteo - SMS", "valor": 2119998, "avanco_fisico": 0.0623, "avanco_temporal": 0.27666666666666667, "meses_exec": 10, "status": "Em andamento", "prazo_contratual": "13 meses", "prazo_exec": "10 meses", "os_data": "2026-01-12", "prev_termino": "2026-11-12", "diretoria": "Diretoria de Edificações", "secretaria": "Saúde", "tags": "Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-11-12", "semaforo": "vermelho"}, {"nome": "Construção de Praça Inominada no Bairro Guarani - Service Construções - CP 444/2024", "objeto": "Praça Guarani - Execução de Obra de Urbanização de Área Verde Pública destinada a Construção da Praça Inominada, localizada entre as Avenidas Carnaval e Clássica e Ruas da Polca e das Valsas no Bairro Guarani, em Uberlândia-MG", "empresa": "Service Construções e Serviços Ltda.", "fiscal": "Lorena Silva", "gestor": "Lucas Barbosa Maciel - SMGAS", "valor": 997000, "avanco_fisico": 0.78, "avanco_temporal": 1.0, "meses_exec": 4, "status": "Em andamento", "prazo_contratual": "08 meses", "prazo_exec": "04 meses", "os_data": "2024-12-16", "prev_termino": "2026-05-11", "diretoria": "Diretoria de Edificações", "secretaria": "Gestão Ambiental e Sustentabilidade", "tags": "Nova Construção", "pagamento": "Débito entre 100k e 500k, Atrasado", "debito": 144155.92, "prazo_termino": "2025-04-16", "semaforo": "vermelho"}, {"nome": "Quadra Praça dos Buritis - Construtora Fiel Rosa LTDA - CP 128/2025", "objeto": "CONTRATAÇÃO DE EMPRESA DE ENGENHARIA PARA EXECUÇÃO DE OBRAS DA QUADRA POLIESPORTIVA EM ESTRUTURA METÁLICA PRAÇA DOS BURITIS , LOCALIZADA NA AV. COMENDADOR ALEXANDRINO GARCIA, NO BAIRRO MINAS GERAIS.", "empresa": "Construtora Fiel Rosa Ltda", "fiscal": "Carlos Humberto de Araújo", "gestor": "Rafael de Melo Nascimento - SMGAS", "valor": 937500, "avanco_fisico": 0.6, "avanco_temporal": 1.0, "meses_exec": 3, "status": "Em andamento", "prazo_contratual": "06 meses", "prazo_exec": "03 meses", "os_data": "2025-09-01", "prev_termino": "2026-04-30", "diretoria": "Diretoria de Edificações", "secretaria": "Gestão Ambiental e Sustentabilidade", "tags": "Plano de Governo (2025-2028), Nova Construção", "pagamento": "", "debito": 0, "prazo_termino": "2025-12-01", "semaforo": "vermelho"}, {"nome": "Remanescente Poliesportivo Canaã - My Engenharia - CP 527/2025", "objeto": "Construção de Estruturas Complementares das Instalações do Poliesportivo no Bairro Canaã, localizado na Av. Palestina esquina com a Av. Judéia no Bairro Canaã, em Uberlândia – MG.", "empresa": "My Engenharia e Prestação de Serviços LTDA", "fiscal": "Guilherme de Oliveira Lopes", "gestor": "", "valor": 806384, "avanco_fisico": 0, "avanco_temporal": 0.225, "meses_exec": 4, "status": "Em andamento", "prazo_contratual": "07 meses", "prazo_exec": "04 meses", "os_data": "2026-03-09", "prev_termino": "2026-07-10", "diretoria": "Diretoria de Edificações", "secretaria": "FUTEL", "tags": "Plano de Governo (2025-2028), Nova Construção, Remanescente", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-07-09", "semaforo": "vermelho"}, {"nome": "Reforma/Ampliação das UBSF rurais/distritos - Trium Construtora - CP 605/2024 ", "objeto": "Contratação de empresa de engenharia especializada e qualificada, com profissionais habilitados, para execução de obras de ampliação/reforma na UBSF Cruzeiro dos Peixotos, UBSF Martinésia, UBSF Rio das Pedras, UBSF Tangará, UBSF Miraporanga e UBSF Tenda dos Morenos - Uberlândia/MG.", "empresa": "Trium Construtora LTDA", "fiscal": "Vlaudimir Henrique da Rocha", "gestor": "Wolney Gomides Timóteo - SMS", "valor": 581473.91, "avanco_fisico": 0.44, "avanco_temporal": 1.0, "meses_exec": 6, "status": "Paralisado", "prazo_contratual": "09 meses", "prazo_exec": "06 meses", "os_data": "2025-04-01", "prev_termino": "2026-04-01", "diretoria": "Diretoria de Edificações", "secretaria": "Saúde", "tags": "Reforma", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2025-10-01", "semaforo": "vermelho"}, {"nome": "Construção Quadra Poliesportiva e Pista de Caminhada Praça Pequis - WFL Comercial e Prestadora LTDA - CP 711/2024 ", "objeto": "Contratação de empresa de engenharia para execução de obras de construção de quadra poliesportiva e pista de caminhada localizada em praça inominada, na Rua Sovi, esquina com Av. Wilson Rodrigues da Silva, no B. Pequis em Uberlândia em atendimento a SMGAS e SEINFRA.", "empresa": "WFL COMERCIAL E PRESTADORA LTDA", "fiscal": "Isabel Maria Soares", "gestor": "Carlos Alvim - SEINFRA", "valor": 503000, "avanco_fisico": 0.4, "avanco_temporal": 1.0, "meses_exec": 3, "status": "Em andamento", "prazo_contratual": "06 meses", "prazo_exec": "03 meses", "os_data": "2025-07-07", "prev_termino": "2026-07-04", "diretoria": "Diretoria de Edificações", "secretaria": "Gestão Ambiental e Sustentabilidade", "tags": "Nova Construção", "pagamento": "", "debito": 0, "prazo_termino": "2025-10-07", "semaforo": "vermelho"}, {"nome": "Pista de Atletismo Jardim Canaã - Trium Construtora - CP 475/2025", "objeto": "Contratação de empresa de Engenharia para Construção de Infraestrutura Esportiva - Construção de Pista de Atletismo com Salto no Poliesportivo Jardim Canaã, localizado na Av. Palestina, esquina com a Av. Judéia, no B. Jardim Canaã, no Município de Uberlãndia MG em atendimento a SEINFRA e FUTEL Fundação Uberlandense de Turismo, Esporte e Lazer.", "empresa": "Trium Construtora LTDA", "fiscal": "Carlos Humberto de Araújo", "gestor": "", "valor": 449802.57, "avanco_fisico": 0, "avanco_temporal": 0.45, "meses_exec": 2, "status": "Em andamento", "prazo_contratual": "05 meses", "prazo_exec": "02 meses", "os_data": "2026-03-09", "prev_termino": "2026-05-11", "diretoria": "Diretoria de Edificações", "secretaria": "FUTEL", "tags": "Plano de Governo (2025-2028), Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-05-09", "semaforo": "vermelho"}, {"nome": "Recapeamento Ana Godoy - Dreste Construtora - CP 412/2025", "objeto": "Contratação de empresa de engenharia especializada e qualificada, com profissionais habilitados, para execução obras de recapeamento em trecho da Av. Ana Godoy de Sousa no bairro Santa Mônica, na cidade de Uberlândia- MG em atendimento a SEINFRA", "empresa": "Dreste Construtora LTDA", "fiscal": "Nelmira Maria Pamplona", "gestor": "Gustavo Rocha - SEINFRA", "valor": 449366.49, "avanco_fisico": 0, "avanco_temporal": 1.0, "meses_exec": 1, "status": "Em andamento", "prazo_contratual": "04 meses", "prazo_exec": "01 mês", "os_data": "2026-03-05", "prev_termino": "2026-04-06", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "Infraestrutura", "tags": "Manutenção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-04-05", "semaforo": "vermelho"}, {"nome": "Calçadas e Banco Praça Sumaia - WFL Comercial e Prestadora LTDA - CP 684/2024 ", "objeto": "Praça Sumaia - Contratação de empresa de engenharia par execução de obra de construção de calçadas e instalação de bancos de concreto na Praça Sumaia M. Ghannoum, localizada entre as alamedas Gregório Faustino Silva, Laércio Antonieto e Antonio Carlos Vieira no B. Granada, em Uberlândia MG em atendimento a SMGAS e SEINFRA", "empresa": "WFL COMERCIAL E PRESTADORA LTDA", "fiscal": "Vitor Lucio Mendes Rezende", "gestor": "Rafael de Melo Nascimento - SMGAS", "valor": 209977.55, "avanco_fisico": 0.62, "avanco_temporal": 1.0, "meses_exec": 3, "status": "Paralisado", "prazo_contratual": "06 meses", "prazo_exec": "03 meses", "os_data": "2025-06-09", "prev_termino": "2026-03-31", "diretoria": "Diretoria de Edificações", "secretaria": "Gestão Ambiental e Sustentabilidade", "tags": "", "pagamento": "Débito <= 100k, Atrasado", "debito": 90228.68, "prazo_termino": "2025-09-09", "semaforo": "vermelho"}, {"nome": "Calçadas Praça Vicente de Paula Goulart - WFL Comercial e Prestadora LTDA - CP 689/2024", "objeto": "Contratação de empresa de engenharia para execução de obra de calçadas na Praça Vicente de Paula Goulart, localizada entre as Ruas Chapadão do Bugre, Serra do Roncador, Cordilheira dos Andes e Av. Serra do Mar, B. São Jorge, em Uberlândia MG em atendimento a SMGAS e SEINFRA.", "empresa": "WFL COMERCIAL E PRESTADORA LTDA", "fiscal": "Vitor Lucio Mendes Rezende", "gestor": "Rafael de Melo Nascimento - SMGAS", "valor": 139000, "avanco_fisico": 0, "avanco_temporal": 1.0, "meses_exec": 3, "status": "Rescisão unilateral", "prazo_contratual": "06 meses", "prazo_exec": "03 meses", "os_data": "2025-06-09", "prev_termino": "", "diretoria": "Diretoria de Edificações", "secretaria": "Gestão Ambiental e Sustentabilidade", "tags": "Reforma", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2025-09-09", "semaforo": "vermelho"}, {"nome": "Construção EMEF Canaã - Construtora Gomes Pimentel LTDA - CP 237/2023 ", "objeto": "EMEF Canaã - Construção da Escola Municipal de Ensino Fundamental do Bairro Canaã, situado à Rua Menfins, Bairro Canaã em Uberlândia-MG", "empresa": "Construtora Gomes Pimentel Ltda", "fiscal": "Gustavo Henrique Ribeiro", "gestor": "Lorena Rocha Santa - SME", "valor": 11694921.56, "avanco_fisico": 0.81, "avanco_temporal": 1.0, "meses_exec": 18, "status": "Em andamento", "prazo_contratual": "22 meses", "prazo_exec": "18 meses", "os_data": "2023-11-13", "prev_termino": "2026-05-28", "diretoria": "Diretoria de Edificações", "secretaria": "Educação", "tags": "Plano de Governo (2025-2028), Publicidade, Prioridade alta, Nova Construção", "pagamento": "Débito entre 500k e 1M, Atrasado", "debito": 823388.44, "prazo_termino": "2025-05-13", "semaforo": "amarelo"}, {"nome": "Remanescente Ampliação do Coletor Tronco Rondon Pacheco - HT Construções LTDA - CP 553/2025", "objeto": "CONTRATAÇÃO DE EMPRESA DE ENGENHARIA PARA EXECUÇÃO DE OBRAS DE AMPLIAÇÃO DO COLETOR TRONCO RONDON PACHECO, NO MUNICÍPIO DE UBERLÂNDIA/MG EM ATENDIMENTO À SMO", "empresa": "HT Construções LTDA", "fiscal": "Nelmira Maria Pamplona", "gestor": "Gustavo Rocha - SEINFRA", "valor": 5402784.63, "avanco_fisico": 0, "avanco_temporal": 0.1125, "meses_exec": 8, "status": "Em andamento", "prazo_contratual": "12 meses", "prazo_exec": "08 meses", "os_data": "2026-03-09", "prev_termino": "2026-11-09", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "DMAE, Infraestrutura", "tags": "Prioridade alta, Nova Construção, Remanescente", "pagamento": "", "debito": 0, "prazo_termino": "2026-11-09", "semaforo": "amarelo"}, {"nome": "Remanescente de  Restauração do Cineteatro Grande Otelo - Lok Service Tecnologia LTDA - CP 498/2025", "objeto": "Contratação de empresa de engenharia para execução de obras remanescentes de restauro do Cineteatro Grande Otelo, no Município de Uberlãndia MG através da SEINFRA e SMCT", "empresa": "Lok Service Tecnologia Ltda", "fiscal": "Isabel Maria Soares", "gestor": "Thalita Asperti Travençolo - SMCT", "valor": 4797086.93, "avanco_fisico": 0, "avanco_temporal": 0.09, "meses_exec": 10, "status": "Em andamento", "prazo_contratual": "13 meses", "prazo_exec": "10 meses", "os_data": "2026-03-09", "prev_termino": "2027-01-12", "diretoria": "Diretoria de Edificações", "secretaria": "Cultura e Turismo", "tags": "Plano de Governo (2025-2028), Prioridade alta, Reforma, Remanescente", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2027-01-09", "semaforo": "amarelo"}, {"nome": "Construção UBSF Morada Nova - HHD Elétrica Comércio LTDA - CP 679/2024 ", "objeto": "Contratação semi-integrada de empresa de engenharia para elaboração de projetos e construção de UBSF MORADA NOVA Uberlândia MG em atendimento a SMS e SMO", "empresa": "HHD Elétrica Comércio Ltda", "fiscal": "Bruna Costa Pires", "gestor": "Wolney Gomides Timóteo - SMS", "valor": 2799000, "avanco_fisico": 0, "avanco_temporal": 0.1976190476190476, "meses_exec": 14, "status": "Em andamento", "prazo_contratual": "17 meses", "prazo_exec": "14 meses", "os_data": "2026-01-12", "prev_termino": "2027-05-03", "diretoria": "Diretoria de Edificações", "secretaria": "Saúde", "tags": "Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2027-03-12", "semaforo": "amarelo"}, {"nome": "Obras para AVCB em 21 escolas municipais (Projetos Técnicos) - Construtora Bento da Cunha LTDA - CP 796/2023", "objeto": "AVCB 21 Escolas - Execução de Obras para Adequação dos Sistemas de Prevenção e Combate a Incêndios e Pânico (Projetos Técnicos) em 21 escolas municipais de Uberlândia (MG)", "empresa": "Construtora Bento da Cunha LTDA", "fiscal": "Guilherme de Oliveira Lopes", "gestor": "Lorena Rocha Santa - SME", "valor": 2734936, "avanco_fisico": 0.9, "avanco_temporal": 1.0, "meses_exec": 6, "status": "Em andamento", "prazo_contratual": "10 meses", "prazo_exec": "06 meses", "os_data": "2024-04-08", "prev_termino": "2026-05-07", "diretoria": "Diretoria de Edificações", "secretaria": "Educação", "tags": "Reforma, Manutenção", "pagamento": "Débito entre 100k e 500k, Atrasado", "debito": 406504.01, "prazo_termino": "2024-10-08", "semaforo": "amarelo"}, {"nome": "Reforma, Restauro e Ampliação do Conjunto da Estação Sobradinho - Demark Serviços LTDA - TP 659/2023 ", "objeto": "Reforma, Restauro e Ampliação do Conjunto da Estação Sobradinho - Parque Sobradinho, localizado na Zona Rural do município de Uberlândia - MG.", "empresa": "Demark Serviços Ltda - EPP", "fiscal": "Thais Silva", "gestor": "", "valor": 2305461.66, "avanco_fisico": 0.8829, "avanco_temporal": 1.0, "meses_exec": 12, "status": "Em andamento", "prazo_contratual": "16 meses", "prazo_exec": "12 meses", "os_data": "2024-03-13", "prev_termino": "2026-03-28", "diretoria": "Diretoria de Edificações", "secretaria": "Cultura e Turismo", "tags": "Reforma", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2025-03-13", "semaforo": "amarelo"}, {"nome": "Reforma e Construção de Quadra EMEF Profª Maria José Mamede Moreira - Trium Construtora Ltda - DL 146/2025", "objeto": "CONTRATAÇÃO DE EMPRESA PARA EXECUTAR A OBRA DE REFORMA E CONSTRUÇÃO DE QUADRA DA ESCOLA MUNICIPAL DE ENSINO FUNDAMENTAL PROF.ª MARIA JOSÉ MAMEDE MOREIRA, SITUADO À RUA DO GARÇON, 101, BAIRRO JARDIM DAS PALMEIRAS, EM UBERLÂNDIA/MG", "empresa": "Trium Construtora LTDA", "fiscal": "Guilherme de Oliveira Lopes", "gestor": "Cristina Eliza Cantelli Reis - SME", "valor": 2012158.76, "avanco_fisico": 0.84, "avanco_temporal": 1.0, "meses_exec": 6, "status": "Em andamento", "prazo_contratual": "10 meses", "prazo_exec": "06 meses", "os_data": "2025-05-20", "prev_termino": "2026-03-31", "diretoria": "Diretoria de Edificações", "secretaria": "Educação", "tags": "Prioridade alta, Reforma", "pagamento": "", "debito": 0, "prazo_termino": "2025-11-20", "semaforo": "amarelo"}, {"nome": "Construção UBSF Taiaman - JR Engenharia e Construcoes LTDA - CP 678/2024  ", "objeto": "Contratação semi-integrada de empresa de engenharia para elaboração de projetos e construção de UBSF TAIAMAN Uberlândia MG em atendimento a SMS e SMO", "empresa": "JR ENGENHARIA E CONSTRUCOES LTDA", "fiscal": "Bruna Costa Pires", "gestor": "Wolney Gomides Timóteo - SMS", "valor": 2007675.51, "avanco_fisico": 0.0256, "avanco_temporal": 0.1976190476190476, "meses_exec": 14, "status": "Em andamento", "prazo_contratual": "17 meses", "prazo_exec": "14 meses", "os_data": "2026-01-12", "prev_termino": "2027-05-03", "diretoria": "Diretoria de Edificações", "secretaria": "Saúde", "tags": "Prioridade alta, Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2027-03-12", "semaforo": "amarelo"}, {"nome": "Espaço Esportivo Lago Azul - Trium Construtora - CP 142/2025", "objeto": "Contratação de empresa de engenharia para construção de espaço esportivo comunitário no B. Lagoa Azul, localizado na Rua Nadiene de Fátima Marques Silva S/Nº , B. Lagoa Azul em Uberlândia MG em atendimento a SEINFRA e SMGAS", "empresa": "Trium Construtora LTDA", "fiscal": "Vitor Lucio Mendes Rezende", "gestor": "", "valor": 1541274.92, "avanco_fisico": 0, "avanco_temporal": 0.16666666666666666, "meses_exec": 4, "status": "Em andamento", "prazo_contratual": "06 meses", "prazo_exec": "04 meses", "os_data": "2026-03-16", "prev_termino": "2026-07-17", "diretoria": "Diretoria de Edificações", "secretaria": "FUTEL", "tags": "Plano de Governo (2025-2028), Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-07-16", "semaforo": "amarelo"}, {"nome": "GERENCIADORA ETE Uberabinha - Consórcio Retrofit Planal - TUV Theinland - CP 220/2023 ", "objeto": "Gerenciamento, Supervisão, Consultoria, Assessoria, Fiscalização, Orientação Técnica, Serviços Técnicos, Vistoria, Avaliação, Parecer Técnico, Medição e Outras Atribuições Pertinentes aos Serviços para Obra de Ampliação e Retrofit da ETE Uberabinha em Uberlândia-MG", "empresa": "Consórcio REtrofit Planal - TUV Theinland", "fiscal": "Carlos Alvim", "gestor": "Paulo José Mendes Júnior - SEINFRA", "valor": 4183395.31, "avanco_fisico": 0.8809999999999999, "avanco_temporal": 0.8705882352941177, "meses_exec": 34, "status": "Em andamento", "prazo_contratual": "30 meses", "prazo_exec": "34 meses", "os_data": "2023-10-30", "prev_termino": "2026-10-16", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "DMAE, Infraestrutura", "tags": "Prioridade alta", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-08-30", "semaforo": "verde"}, {"nome": "EMERGENCIAL - Restauração Drenagem Minervina-Calu", "objeto": "CONTRATAÇÃO EMERGENCIAL DE EMPRESA DE ENGENHARIA ESPECIALIZADA PARA MELHORIA DE REDE DE DRENAGEM PLUVIAL POR MÉTODO NÃO DESTRUTIVO", "empresa": "Repipe Engenharia LTDA", "fiscal": "Mackenzie (DMAE)", "gestor": "Gustavo Henrique Ribeiro - SEINFRA", "valor": 1680000, "avanco_fisico": 1.0, "avanco_temporal": 1.0, "meses_exec": 4, "status": "Em andamento", "prazo_contratual": "12 meses", "prazo_exec": "04 meses", "os_data": "2025-11-17", "prev_termino": "2026-03-17", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "DMAE, Infraestrutura", "tags": "Nova demanda, Emergencial", "pagamento": "Em dia", "debito": 0, "prazo_termino": "2026-03-17", "semaforo": "verde"}, {"nome": "Construção 06 represas de detenção pluvial (Córrego Lagoinha e Mogi) - DP BARROS - CP 496/2025", "objeto": "Contratação integrada de empresa de engenharia para elaboração de projetos executivos e execução de obras de drenagem no Córrego Lagoinha e Mogi", "empresa": "Consórcio Bacia do Lagoinha (DP Barros - Pavimentação e Construção Ltda.; Hidrostudio Engenharia S/S; ECR Engenharia Ltda.)", "fiscal": "", "gestor": "", "valor": 70388066.62, "avanco_fisico": 0.0, "avanco_temporal": null, "meses_exec": null, "status": "Aguardando emissão de OS", "prazo_contratual": "34 meses", "prazo_exec": "28 meses", "os_data": "", "prev_termino": "", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "Infraestrutura, DMAE", "tags": "Plano de Governo (2025-2028), Prioridade alta, Nova Construção", "pagamento": "", "debito": 0, "prazo_termino": "", "semaforo": "cinza"}, {"nome": "Pavimentação, drenagem e esgoto - Bairro Élisson Prieto (Glória)", "objeto": "Contratação de empresa de engenharia para execução de obras de infraestrutura no B. Élisson Prieto (Antigo Assentamento Glória), em Uberlãndia MG em atendimento a SEINFRA e DMAE Departamento Municipal de Água e Esgoto", "empresa": "INFRACON ENGENHARIA S.A.", "fiscal": "", "gestor": "", "valor": 55690103.39, "avanco_fisico": 0.0, "avanco_temporal": null, "meses_exec": null, "status": "Aguardando emissão de OS", "prazo_contratual": "36 meses", "prazo_exec": "30 meses", "os_data": "", "prev_termino": "", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "Infraestrutura, DMAE", "tags": "Plano de Governo (2025-2028), Prioridade alta, Nova Construção", "pagamento": "", "debito": 0, "prazo_termino": "", "semaforo": "cinza"}, {"nome": "Tapa-buracos, recomposição asfáltica, restauração e pavimentos - BT Construções Ltda - PE 172/2024", "objeto": "Execução de tapa-buracos, recomposição asfáltica, restauração e pavimentos visando a manutenção de vias urbanas, na cidade de Uberlândia-MG", "empresa": "BT Construções Ltda", "fiscal": "Vlaudimir Henrique da Rocha", "gestor": "", "valor": 10598980.8, "avanco_fisico": 0.0, "avanco_temporal": null, "meses_exec": null, "status": "Em andamento", "prazo_contratual": "", "prazo_exec": "", "os_data": "2024-08-12", "prev_termino": "", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "Infraestrutura", "tags": "Prioridade alta", "pagamento": "Em dia", "debito": 0, "prazo_termino": "", "semaforo": "cinza"}, {"nome": "Viaduto Monsenhor/BR365 - Grada Construtora Ltda - RDC 903/22 ", "objeto": "Elaboração de Projetos e Execução da Obra de Duplicação de Viaduto da Avenida Monsenhor Eduardo sobre a BR 365 no Município de Uberlândia-MG", "empresa": "Grada Construtora LTDA", "fiscal": "Gustavo Henrique Ribeiro", "gestor": "Vlaudimir Henrique da Rocha - SEINFRA", "valor": 10350000, "avanco_fisico": 0, "avanco_temporal": null, "meses_exec": null, "status": "Paralisado", "prazo_contratual": "26 meses", "prazo_exec": "12 meses", "os_data": "", "prev_termino": "", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "Infraestrutura", "tags": "Nova Construção", "pagamento": "Em dia", "debito": 0, "prazo_termino": "", "semaforo": "cinza"}, {"nome": "Sistema de Gestão Integrada do Sistema Viário (SGSIV) - SETE SERVICOS - CP 497/2025", "objeto": "Contratação de empresa para implantação e expansão do Sistema de Gestão Integrada do Sistema Viário, em Uberlândia MG em atendimento a SEINFRA SESURB", "empresa": "SETE - SERVICOS TECNICOS ESPECIALIZADOS LTDA", "fiscal": "Maurício Pereira, Vlaudimir Henrique da Rocha", "gestor": "Gustavo Rocha - SEINFRA", "valor": 4997025, "avanco_fisico": 0.0, "avanco_temporal": null, "meses_exec": null, "status": "Aguardando emissão de OS", "prazo_contratual": "12 meses (prorrogável)", "prazo_exec": "12 meses (prorrogável)", "os_data": "", "prev_termino": "", "diretoria": "Diretoria de Saneamento Pavimento e OAE", "secretaria": "Infraestrutura", "tags": "Prioridade alta", "pagamento": "", "debito": 0, "prazo_termino": "", "semaforo": "cinza"}, {"nome": "Manutenção 49 prédios da saúde - RP Serviços, Soluções e Terceirização Ltda - PE 59/2024", "objeto": "Contratação de empresa especializada em engenharia para prestação de serviços de manutenções prediais em 49 Unidades de Saúde em atendimento a SMS.", "empresa": "RP Serviços Soluções e Terceirização Ltda", "fiscal": "Nelmira Maria Pamplona", "gestor": "Wolney Gomides Timóteo - SMS", "valor": 2851877.31, "avanco_fisico": 0.43, "avanco_temporal": null, "meses_exec": null, "status": "Em andamento", "prazo_contratual": "12 meses", "prazo_exec": "Diversos (à depender da OS).", "os_data": "2025-02-21", "prev_termino": "2028-01-03", "diretoria": "Diretoria de Edificações", "secretaria": "Saúde", "tags": "", "pagamento": "Em dia", "debito": 0, "prazo_termino": "", "semaforo": "cinza"}];
+
+function formatarMoeda(v) {
+    if (!v) return 'R$ 0,00';
+    return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatarPct(v) {
+    if (v === null || v === undefined) return '-';
+    return (v * 100).toFixed(1) + '%';
+}
+
+function formatarData(d) {
+    if (!d) return '-';
+    const partes = d.split('-');
+    if (partes.length === 3) return partes[2] + '/' + partes[1] + '/' + partes[0];
+    return d;
+}
+
+function statusTexto(c) {
+    if (c.avanco_temporal === null) return 'Sem dados de prazo';
+    const fisico = (c.avanco_fisico * 100).toFixed(1);
+    const temporal = (c.avanco_temporal * 100).toFixed(1);
+    if (c.semaforo === 'verde') return 'No prazo (' + fisico + '% executado / ' + temporal + '% do prazo)';
+    if (c.semaforo === 'amarelo') return 'Atenção - deveria estar com ' + temporal + '% de avanço';
+    return 'Atrasada - deveria estar com ' + temporal + '% de avanço';
+}
+
+function renderCard(c, idx) {
+    const tags = c.tags ? c.tags.split(', ').map(t => '<span class="tag">' + t + '</span>').join('') : '';
+
+    return `
+    <div class="card ${c.semaforo}" onclick="this.classList.toggle('aberto')" id="card-${idx}">
+        <div class="card-header">
+            <div>
+                <div class="card-title">${c.nome || c.objeto}</div>
+                <span class="status-badge ${c.semaforo}">${statusTexto(c)}</span>
+            </div>
+            <div class="card-valor">${formatarMoeda(c.valor)}</div>
+        </div>
+
+        <div class="barras">
+            <div class="barra-container">
+                <div class="barra-label">Fisico</div>
+                <div class="barra-track">
+                    <div class="barra-fill barra-fisico" style="width: ${Math.max(c.avanco_fisico * 100, 2)}%">
+                        <span>${(c.avanco_fisico * 100).toFixed(1)}%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="barra-container">
+                <div class="barra-label">Temporal</div>
+                <div class="barra-track">
+                    <div class="barra-fill barra-temporal" style="width: ${c.avanco_temporal !== null ? Math.max(c.avanco_temporal * 100, 2) : 0}%">
+                        <span>${c.avanco_temporal !== null ? (c.avanco_temporal * 100).toFixed(1) + '%' : '-'}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-info">
+            <span><span class="lbl">Empresa:</span> ${c.empresa}</span>
+            <span><span class="lbl">Fiscal:</span> ${c.fiscal}</span>
+            <span><span class="lbl">OS:</span> ${formatarData(c.os_data)}</span>
+            <span><span class="lbl">Prazo exec.:</span> ${c.prazo_exec}</span>
+            <span><span class="lbl">Termino exec.:</span> ${formatarData(c.prazo_termino)}</span>
+            <span><span class="lbl">Pagamento:</span> ${c.pagamento}</span>
+        </div>
+
+        <div class="card-detalhe">
+            <div class="card-info">
+                <span><span class="lbl">Objeto:</span> ${c.objeto}</span>
+                <span><span class="lbl">Gestor:</span> ${c.gestor}</span>
+                <span><span class="lbl">Diretoria:</span> ${c.diretoria}</span>
+                <span><span class="lbl">Secretaria:</span> ${c.secretaria}</span>
+                <span><span class="lbl">Prazo contratual:</span> ${c.prazo_contratual}</span>
+                <span><span class="lbl">Debito:</span> ${c.debito ? formatarMoeda(c.debito) : 'Nenhum'}</span>
+            </div>
+            <div style="margin-top: 8px;">${tags}</div>
+        </div>
+    </div>`;
+}
+
+function filtrar() {
+    const busca = document.getElementById('busca').value.toLowerCase();
+    const status = document.getElementById('filtroStatus').value;
+    const container = document.getElementById('cards');
+
+    const filtrados = contratos.filter(c => {
+        const texto = (c.nome + ' ' + c.empresa + ' ' + c.fiscal + ' ' + c.objeto).toLowerCase();
+        const matchBusca = !busca || texto.includes(busca);
+        const matchStatus = !status || c.semaforo === status;
+        return matchBusca && matchStatus;
+    });
+
+    container.innerHTML = filtrados.map((c, i) => renderCard(c, i)).join('');
+}
+
+// Render inicial
+filtrar();
+</script>
+</body>
+</html>
